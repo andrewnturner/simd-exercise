@@ -8,7 +8,7 @@ pub fn pop_count_reference(x: u32) -> u32 {
     count
 }
 
-pub fn pop_count(mut x: u32) -> u32 {
+pub fn pop_count_vectorised(mut x: u32) -> u32 {
     // The pop count is the sum of the values when we interpret as 32 one bit
     // integers.
 
@@ -46,6 +46,10 @@ pub fn pop_count(mut x: u32) -> u32 {
     x
 }
 
+pub fn pop_count_native(x: u32) -> u32 {
+    x.count_ones()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -57,9 +61,9 @@ mod tests {
     }
 
     #[test]
-    fn test_pop_count() {
+    fn test_pop_count_vectorised() {
         for i in 0..252 {
-            assert_eq!(pop_count(i), pop_count_reference(i));
+            assert_eq!(pop_count_vectorised(i), pop_count_reference(i));
         }
     }
 }
