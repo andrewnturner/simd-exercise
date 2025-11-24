@@ -1,13 +1,3 @@
-pub fn pop_count_reference(x: u32) -> u32 {
-    let mut count = 0;
-    for i in 0..32 {
-        let has_bit_i = (x >> i) & 1;
-        count += has_bit_i;
-    }
-
-    count
-}
-
 pub fn pop_count_vectorised(mut x: u32) -> u32 {
     // The pop count is the sum of the values when we interpret as 32 one bit
     // integers.
@@ -46,19 +36,11 @@ pub fn pop_count_vectorised(mut x: u32) -> u32 {
     x
 }
 
-pub fn pop_count_native(x: u32) -> u32 {
-    x.count_ones()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::pop_count::pop_count_reference;
 
-    #[test]
-    fn test_pop_count_reference() {
-        // 37 = 32 + 4 + 1
-        assert_eq!(pop_count_reference(37), 3);
-    }
+    use super::*;
 
     #[test]
     fn test_pop_count_vectorised() {

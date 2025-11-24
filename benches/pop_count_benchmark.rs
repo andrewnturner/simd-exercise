@@ -2,7 +2,7 @@ use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use simd_exercise::{pop_count_native, pop_count_reference, pop_count_vectorised};
+use simd_exercise::pop_count::{pop_count_native, pop_count_reference, pop_count_vectorised};
 
 pub fn pop_count_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("pop_count");
