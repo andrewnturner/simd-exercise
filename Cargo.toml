@@ -11,3 +11,7 @@ criterion = "0.7"
 [[bench]]
 name = "pop_count_benchmark"
 harness = false
+
+[[bench]]
+name = "decode_base64_benchmark"
+harness = false

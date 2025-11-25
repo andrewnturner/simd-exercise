@@ -54,12 +54,12 @@ mod tests {
     #[test]
     fn test_decode_base64_reference() {
         // "aaaa" -> 26 26 26 26 -> 011010 011010 011010 011010-> 01101001 10100110 10011010 -> 105 166 154
-        let data = "aaaa";
+        let data = "aaaaaaaa";
 
         let mut out = Vec::new();
         decode_base64_reference(data.as_bytes(), &mut out).unwrap();
 
-        let expected = vec![105, 166, 154];
+        let expected = vec![105, 166, 154, 105, 166, 154];
         assert_eq!(out, expected);
     }
 }
