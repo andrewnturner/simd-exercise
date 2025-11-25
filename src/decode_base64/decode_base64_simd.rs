@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub enum DecodeError {
-    InvalidByte(u8),
+    InvalidByte,
 }
 
 pub fn decode_base64_simd(data: &[u8], out: &mut Vec<u8>) -> Result<(), DecodeError> {
@@ -13,26 +13,14 @@ pub fn decode_base64_simd(data: &[u8], out: &mut Vec<u8>) -> Result<(), DecodeEr
 
     // Each ascii byte decodes to 6 bits, so 4 ascii bytes decodes to 3 bytes.
     for chunk in data.chunks(4) {
-        // Buffer for at most 32 bits. We will decode 6 * chunk.len() < 32 bits.
-        let mut decoded_bits = 0u32;
+        // Padding with b'A' won't change the value since it maps to 0;
+        let mut ascii = [b'A'; 4];
+        ascii[..chunk.len()].copy_from_slice(chunk);
 
-        for &ascii_byte in chunk {
-            let sextet = match ascii_byte {
-                b'A'..b'Z' => ascii_byte - b'A' + 0,
-                b'a'..b'z' => ascii_byte - b'a' + 26,
-                b'0'..b'9' => ascii_byte - b'0' + 52,
-                b'+' => 62,
-                b'/' => 63,
-                _ => return Err(DecodeError::InvalidByte(ascii_byte)),
-            };
-
-            // Shift up our buffer by 6 bits and write the decoded sextet into the space.
-            decoded_bits <<= 6;
-            decoded_bits |= sextet as u32;
+        let (decoded_bytes, is_ok) = decode_hot(ascii);
+        if !is_ok {
+            return Err(DecodeError::InvalidByte);
         }
-
-        // Left align our decoded bits in the buffer.
-        decoded_bits <<= 32 - (6 * chunk.len());
 
         // chunk_len:                                      1 2 3 4
         // chunk_len / 2:                                  0 1 1 2
@@ -42,10 +30,39 @@ pub fn decode_base64_simd(data: &[u8], out: &mut Vec<u8>) -> Result<(), DecodeEr
         let chunk_len = chunk.len();
         let num_bytes_decoded = chunk_len - (chunk_len / 2) + (chunk_len / 4);
 
-        out.extend_from_slice(&decoded_bits.to_be_bytes()[..num_bytes_decoded]);
+        out.extend_from_slice(&decoded_bytes[..num_bytes_decoded]);
     }
 
     Ok(())
+}
+
+fn decode_hot(ascii: [u8; 4]) -> ([u8; 3], bool) {
+    // Buffer for at most 32 bits. We will decode 6 * chunk.len() < 32 bits.
+    let mut decoded_bits = 0u32;
+
+    let mut is_ok = true;
+
+    for ascii_byte in ascii {
+        let sextet = match ascii_byte {
+            b'A'..b'Z' => ascii_byte - b'A' + 0,
+            b'a'..b'z' => ascii_byte - b'a' + 26,
+            b'0'..b'9' => ascii_byte - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => !0,
+        };
+
+        // Shift up our buffer by 6 bits and write the decoded sextet into the space.
+        decoded_bits <<= 6;
+        decoded_bits |= sextet as u32;
+
+        is_ok &= sextet != !0;
+    }
+
+    // From 4 ascii characters we decode exactly 24 bits of data.
+    let [b3, b2, b1, _] = decoded_bits.to_le_bytes();
+
+    ([b1, b2, b3], is_ok)
 }
 
 #[cfg(test)]
